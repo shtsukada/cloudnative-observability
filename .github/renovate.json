@@ -5,8 +5,20 @@
     ":semanticCommits",
     ":disableRateLimiting"
   ],
-  "labels": ["renovate"],
+
+  "timezone": "Asia/Tokyo",
+  "labels": ["dependencies"],
   "prCreation": "not-pending",
+  "prConcurrentLimit": 5,
+  "rebaseWhen": "behind-base-branch",
+
+  "enabledManagers": ["terraform", "gomod", "helm-values", "helm-requirements"],
+
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "dependencies"]
+  },
+
   "packageRules": [
     {
       "description": "Helm charts",
