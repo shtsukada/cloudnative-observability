@@ -19,6 +19,11 @@ COMMON_FILES=(
   ".github/dependabot.yml"
   ".github/renovate.json"
   "LICENSE"
+  ".yamllint"
+  "CODE_OF_CONDUCT.md"
+  "CONTRIBUTING.md"
+  "SECURITY.md"
+  ".dockerignore"
 )
 
 for dst in "$@"; do
