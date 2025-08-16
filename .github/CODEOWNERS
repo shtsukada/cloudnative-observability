@@ -1,1 +1,3 @@
-* @YOUR_GH_HANDLE
+* @your-org/owners
+/.github/ @your-org/owners
+/docs/ @your-org/docs-maintainers
