@@ -1,4 +1,98 @@
-name: nightly-kind-smoke
+name: nightly-kind-smoke (root)
+
 on:
   schedule:
     - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      org:
+        description: 'GitHub org/user override (空なら repository_owner を使用)'
+        required: false
+        default: ''
+      repos:
+        description: '子リポの改行区切り一覧（空ならデフォルト5件を使用）'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  repos-exist:
+    runs-on: ubuntu-latest
+    env:
+      DEFAULT_REPOS: |
+        cloudnative-observability-infra
+        cloudnative-observability-operator
+        cloudnative-observability-monitoring
+        cloudnative-observability-app
+        cloudnative-observability-proto
+    steps:
+      - name: Resolve ORG / REPOS
+        id: resolve
+        run: |
+          ORG="${{ github.repository_owner }}"
+          if [ -n "${{ inputs.org }}" ]; then ORG="${{ inputs.org }}"; fi
+          echo "ORG=$ORG" >> "$GITHUB_ENV"
+
+          if [ -n "${{ inputs.repos }}" ]; then
+            printf "%s\n" "${{ inputs.repos }}" > repos.txt
+          else
+            printf "%s\n" "$DEFAULT_REPOS" > repos.txt
+          fi
+
+          echo "Using ORG=$ORG" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo -e "Target repos:\n$(cat repos.txt)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check child repositories exist (via GitHub API)
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PASS=0; FAIL=0
+          echo "| repo | status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          while read -r r; do
+            [ -z "$r" ] && continue
+            code=$(curl -fsS -o /dev/null -w "%{http_code}" \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${ORG}/${r}" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "| ${ORG}/${r} | ✅ found |" >> "$GITHUB_STEP_SUMMARY"
+              PASS=$((PASS+1))
+            else
+              echo "| ${ORG}/${r} | ❌ missing (HTTP $code) |" >> "$GITHUB_STEP_SUMMARY"
+              FAIL=$((FAIL+1))
+            fi
+          done < repos.txt
+
+          echo "PASS=$PASS" >> "$GITHUB_OUTPUT"
+          echo "FAIL=$FAIL" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if any repo missing
+        if: steps.check.outputs.FAIL != '0'
+        run: |
+          echo "::error::One or more child repositories are missing."
+          exit 1
+
+  kind-smoke:
+    runs-on: ubuntu-latest
+    needs: repos-exist
+    steps:
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          wait: 120s
+
+      - name: Sanity check kubernetes API
+        run: |
+          kubectl version --output=yaml
+          kubectl get nodes
+          kubectl create ns smoke
+          kubectl delete ns smoke --wait=true
+
+      - name: Summarize
+        run: |
+          echo "### kind smoke passed ✅" >> "$GITHUB_STEP_SUMMARY"
