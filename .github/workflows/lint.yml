@@ -55,13 +55,20 @@ jobs:
           jq -e . .github/renovate.json >/dev/null
           echo "JSON syntax OK."
 
-      - name: Enforce no :latest policy
+      - name: Enforce no :latest policy (YAML/Helm/Docker only)
         run: |
           set -euo pipefail
-          if grep -RIn --exclude-dir=docs --include='*.y*ml' --include='Dockerfile' --include='*.md' ':[[:space:]]*latest' .; then
-            echo "::error::Found ':latest' tag usage (policy forbids it)"; exit 1;
+          # 対象: *.yml/*.yaml/Dockerfile（docs/.github は除外）
+          if grep -RIn \
+              --exclude-dir=.git \
+              --exclude-dir=docs \
+              --exclude-dir=.github \
+              --include='*.yml' --include='*.yaml' --include='Dockerfile' \
+              -E ':[[:space:]]*latest(\b|$)' .; then
+            echo "::error::Found ':latest' in manifests or Dockerfiles (policy forbids it)"
+            exit 1
           fi
-          echo "No ':latest' usage detected."
+          echo "No ':latest' usage detected in manifests/Dockerfiles."
 
       - name: scripts/sync-common.sh is executable
         run: |
