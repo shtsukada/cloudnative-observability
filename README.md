@@ -10,10 +10,13 @@
   Kubernetes Operator(Go実装)
 - [cloudnative-observability-monitoring](../cloudnative-observability-monitoring)
   Helm Charts / Prometheus / Grafana ダッシュボード
-- [cloudnative-observability-app](../cloudnative-observability-infra/app)
+- [cloudnative-observability-app](../cloudnative-observability-app)
   gRPCベースのアプリケーション(Go)
 - [cloudnative-observability-proto](../cloudnative-observability-proto)
-  Bufを用いたprotobuf定義
+  Bufを用いたprotobuf定義(Go module)
+  - Module: `github.com/shtsukada/cloudnative-observability-proto`
+  - Current tag: `v0.1.1`
+  - Go import: `github.com/shtsukada/cloudnative-observability-proto/gen/go/observability/grpcburner/v1`
 
 ## このリポジトリの役割
 - プロジェクト全体の共通設定を記述

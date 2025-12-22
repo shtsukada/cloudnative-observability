@@ -43,7 +43,24 @@
 
 ---
 
-## 5. Terraform / Infra 契約
+## 5. gRPC / Proto（API 契約）
+| 項目 | 内容 | 備考 |
+|------|------|------|
+| Go module | `github.com/shtsukada/cloudnative-observability-proto` | proto リポの module |
+| 現行タグ | `v0.1.1` | app/operator は **タグ固定**（pseudo-version禁止） |
+| Go import | `github.com/shtsukada/cloudnative-observability-proto/gen/go/observability/grpcburner/v1` | `option go_package` に一致させる |
+| 生成 | `buf generate`（template: `proto/buf.gen.yaml`） | `gen/` は生成物、手編集禁止 |
+| Lint | `buf lint` | 例外ルールは `buf.yaml` 側で管理 |
+| Breaking | `buf breaking --against '.git#branch=main,subdir=proto'` | 後方互換性の担保 |
+
+### 追従フロー（契約）
+1. proto リポでタグを作成（例: `v0.1.1`）
+2. app / operator で `go get ...@v0.1.1` → `go mod tidy` → PR 作成
+3. ルートの `README` と `docs/contracts.md` に現行タグを反映
+
+---
+
+## 6. Terraform / Infra 契約
 | 項目 | 内容 | 備考 |
 |------|------|------|
 | バージョン | Terraform **1.9** / AWS Provider `~> 5` | `.terraform-version`（任意） |
@@ -53,7 +70,7 @@
 
 ---
 
-## 6. kind 用軽量構成
+## 7. kind 用軽量構成
 | 項目 | 内容 | 備考 |
 |------|------|------|
 | monitoring values | retention短縮 / replica=1 / scrape間隔30s | 例: `values-kind.yaml` |
@@ -62,7 +79,7 @@
 
 ---
 
-## 7. ドキュメント共通仕様
+## 8. ドキュメント共通仕様
 | 項目 | 内容 | 備考 |
 |------|------|------|
 | README最小項目 | 一行ミッション / 成果物 / 契約 / Quickstart / MVP+Plus / 受け入れ基準 / スコープ外 | 各子リポで採用 |
@@ -72,7 +89,7 @@
 
 ---
 
-## 8. Secrets 管理ルール
+## 9. Secrets 管理ルール
 | 項目 | 内容 | 備考 |
 |------|------|------|
 | Sealed Secrets | `sealed-secrets` ns / RSA key管理 | |
